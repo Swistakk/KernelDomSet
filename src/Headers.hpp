@@ -21,5 +21,7 @@ template<typename TH, typename... TA> void _dbg(const char* sdbg, TH h, TA... t)
 #define cerr if(0)cout
 #endif
 
+template<class T1, class T2>
+ostream& operator<< (ostream &out, pair<T1, T2> pair) { return out << "(" << pair.first << ", " << pair.second << ")";}
 template<class T> ostream& operator<<(ostream& out, vector<T> vec) { out<<"("; for (auto& v: vec) out<<v<<", "; return out<<")"; }
 template<class T> ostream& operator<<(ostream& out, set<T> vec) { out<<"("; for (auto& v: vec) out<<v<<", "; return out<<")"; }
