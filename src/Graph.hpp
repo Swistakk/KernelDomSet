@@ -9,24 +9,35 @@ struct Graph {
   vector<bool> is_white;
   vector<int> domset;
   int n;
+  Graph() {
+    n = -1;
+  }
   Graph(int n_) {
     n = n_;
-    all_neis.resize(n + 1);
-    black_neis.resize(n + 1);
-    white_neis.resize(n + 1);
-    is_white.resize(n + 1);
+    ResizeVectors(n);
     for (int i = 1; i <= n; i++) {
       alive.insert(i);
     }
   }
+  void ResizeVectors(int k) {
+    all_neis.resize(k + 1);
+    black_neis.resize(k + 1);
+    white_neis.resize(k + 1);
+    is_white.resize(k + 1);
+  }
   void AddEdge(int a, int b) {
-    black_neis[a].insert(b);
-    black_neis[b].insert(a);
-    all_neis[a].insert(b);
-    all_neis[b].insert(a);
+    for (int rnds = 0; rnds < 2; rnds++) {
+      if (!is_white[b]) {
+        black_neis[a].insert(b);
+      } else {
+        white_neis[a].insert(b);
+      }
+      all_neis[a].insert(b);
+      swap(a, b);
+    }
   }
   void ColorWhite(int v) {
-    debug("to white ", v);
+    //debug("to white ", v);
     for (auto nei : all_neis[v]) {
       black_neis[nei].erase(v);
       white_neis[nei].insert(v);
@@ -34,7 +45,7 @@ struct Graph {
     is_white[v] = 1;
   }
   void Kill(int v) {
-    debug("kill ", v);
+    //debug("kill ", v);
     assert(alive.count(v));
     for (auto nei : all_neis[v]) {
       all_neis[nei].erase(v);
@@ -47,7 +58,7 @@ struct Graph {
     alive.erase(v);
   }
   void RemoveEdge(int a, int b) {
-    debug("rem edge", a, b);
+    //debug("rem edge", a, b);
     for (int i = 0; i < 2; i++) {
       all_neis[a].erase(b);
       white_neis[a].erase(b);
@@ -85,7 +96,7 @@ struct Graph {
     for (auto nei : all_neis[v]) {
       checked.insert(nei);
       if (AreBlackContained(v, nei)) {
-        debug("here1", nei);
+        //debug("here1", nei);
         Kill(v);
         return;
       }
@@ -95,7 +106,7 @@ struct Graph {
         if (checked.count(neinei) || neinei == v) { continue; }
         checked.insert(neinei);
         if (AreBlackContained(v, neinei)) {
-          debug("here2", neinei);
+          //debug("here2", neinei);
           Kill(v);
           return;
         }
@@ -115,14 +126,14 @@ struct Graph {
         }
       }
       if (!fail) {
-        debug("superset ", u, " by ", nei);
+        //debug("superset ", u, " by ", nei);
         ColorWhite(u);
         return;
       }
     }
   }
   void PutDomset(int u) {
-    debug("put ", u);
+    //debug("put ", u);
     domset.PB(u);
     vector<int> to_recolor;
     for (auto nei : black_neis[u]) {
@@ -160,6 +171,7 @@ struct Graph {
         nxt_ind++;
       }
     }
+    //debug(n, nxt_ind, shrink_black_ind);
     assert(nxt_ind <= 25);
     vector<int> dp(1 << nxt_ind, n);
     dp[0] = 0;
@@ -168,13 +180,141 @@ struct Graph {
       for (auto nei : black_neis[v]) {
         covered += 1 << shrink_black_ind[nei];
       }
+      //debug(v, black_neis[v], is_white[v]);
       if (!is_white[v]) {
         covered += 1 << shrink_black_ind[v];
       }
+      //debug(covered);
       for (int prv_mask = 0; prv_mask < 1 << nxt_ind; prv_mask++) {
         dp[prv_mask | covered] = min(dp[prv_mask | covered], dp[prv_mask] + 1);
       }
     }
     return dp.back() + domset.size();
+  }
+  void AlberOne(int v) {
+    if (alive.count(v) == 0) { return; }
+    set<int> N1;
+    for (auto nei : all_neis[v]) {
+      for (auto neinei : all_neis[nei]) {
+        if (neinei != v && all_neis[v].count(neinei) == 0) {
+          N1.insert(nei);
+          break;
+        }
+      }
+    }
+    set<int> N2;
+    for (auto nei : all_neis[v]) {
+      if (N1.count(nei)) { continue; }
+      for (auto neinei : all_neis[nei]) {
+        if (N1.count(neinei)) {
+          N2.insert(nei);
+          break;
+        }
+      }
+    }
+    set<int> N3;
+    for (auto nei : all_neis[v]) {
+      if (N1.count(nei) || N2.count(nei)) { continue; }
+      N3.insert(nei);
+    }
+    for (auto nei : N3) {
+      if (!is_white[nei]) {
+        PutDomset(v);
+        return;
+      }
+    }
+  }
+  bool AlberPair(int v, int w) {
+    assert(v != w);
+    if (!alive.count(v) || !alive.count(w)) { return false; }
+    set<int> nvw = all_neis[v];
+    nvw.insert(all_neis[w].begin(), all_neis[w].end());
+    nvw.erase(v);
+    nvw.erase(w);
+    set<int> N1;
+    for (auto u : nvw) {
+      for (auto nei : all_neis[u]) {
+        if (nei != v && nei != w && nvw.count(nei) == 0) {
+          N1.insert(u);
+          break;
+        }
+      }
+    }
+    set<int> N2, N3, N3_black;
+    for (auto u : nvw) {
+      if (N1.count(u)) { continue; }
+      bool got = false;
+      for (auto nei : all_neis[u]) {
+        if (N1.count(nei)) {
+          N2.insert(u);
+          got = true;
+          break;
+        }
+      }
+      if (!got) {
+        N3.insert(u);
+        if (!is_white[u]) {
+          N3_black.insert(u);
+        }
+      }
+    }
+    if ((int)N3.size() <= 1) { return false; }
+    set<int> N23 = N2;
+    N23.insert(N3.begin(), N3.end());
+    for (auto u : N23) {
+      bool any_non_dominated = false;
+      for (auto t : N3_black) {
+        if (all_neis[u].count(t) == 0 && t != u) {
+          any_non_dominated = true;
+          break;
+        }
+      }
+      if (!any_non_dominated) { return false; }
+    }
+    int dom_v = true, dom_w = true;
+    for (auto u : N3_black) {
+      if (all_neis[v].count(u) == 0) { dom_v = false; }
+      if (all_neis[w].count(u) == 0) { dom_w = false; }
+    }
+    // GOSCIE Z N3 MUSZA BYC CZARNI ABY WYMUSIC TE REGULE
+    if (dom_w && !dom_v) {
+      swap(v, w);
+      swap(dom_w, dom_v);
+    }
+    if (!dom_w && !dom_v) {
+      PutDomset(v);
+      PutDomset(w);
+      for (auto u : N23) {
+        Kill(u);
+      }
+    } else if (!dom_w) {
+      PutDomset(v);
+      for (auto u : N3) {
+        Kill(u);
+      }
+      for (auto u : N2) {
+        if (all_neis[v].count(u)) {
+          Kill(u);
+        }
+      }
+    } else {
+      assert(dom_w && dom_v);
+      for (auto u : N3) {
+        Kill(u);
+      }
+      for (auto u : N2) {
+        if (all_neis[v].count(u) && all_neis[w].count(u)) {
+          Kill(u);
+        }
+      }
+      ResizeVectors(n + 2);
+      for (int new_v = n + 1; new_v <= n + 2; new_v++) {
+        alive.insert(new_v);
+        AddEdge(v, new_v);
+        AddEdge(w, new_v);
+      }
+      n += 2;
+    }
+    return true;
   }
 };
