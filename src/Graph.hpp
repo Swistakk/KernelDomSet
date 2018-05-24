@@ -299,13 +299,21 @@ struct Graph {
       }
     } else {
       assert(dom_w && dom_v);
-      for (auto u : N3) {
-        Kill(u);
-      }
+      set<int> to_kill(N3.begin(), N3.end());
+//       for (auto u : N3) {
+//         Kill(u);
+//       }
       for (auto u : N2) {
         if (all_neis[v].count(u) && all_neis[w].count(u)) {
-          Kill(u);
+          to_kill.insert(u);
+          //Kill(u);
         }
+      }
+      if (to_kill.size() <= 2) {
+        return false;
+      }
+      for (auto u : to_kill) {
+        Kill(u);
       }
       ResizeVectors(n + 2);
       for (int new_v = n + 1; new_v <= n + 2; new_v++) {
@@ -373,6 +381,68 @@ struct Graph {
     // end checks
     
     return res;
+  }
+  
+  vector<vector<int>> CountProjections(vector<int> A, int r) {
+    vector<int> in_A(n + 1);
+    for (auto v : A) {
+      in_A[v] = 1;
+    }
+    vector<int> last_vis(n + 1);
+    vector<int> dis(n + 1);
+    int cnt_bfs = 0;
+    vector<vector<int>> projs(n + 1);
+    for (auto root : A) {
+      cnt_bfs++;
+      vector<int> que{root};
+      last_vis[root] = cnt_bfs;
+      dis[root] = 0;
+      for (int ii = 0; ii < (int)que.size(); ii++) {
+        int v = que[ii];
+        if (ii) {
+          projs[v].PB(root);
+        }
+        if (dis[v] == r) { continue; }
+        for (auto nei : all_neis[v]) {
+          if (in_A[nei]) { continue; }
+          if (last_vis[nei] == cnt_bfs) { continue; }
+          last_vis[nei] = cnt_bfs;
+          dis[nei] = dis[v] + 1;
+          que.PB(nei);
+        }
+      }
+    }
+    return projs;
+  }
+  
+  // coded for independent verification of correctness
+  vector<vector<int>> CountProjections2(vector<int> A, int r) { 
+    vector<int> in_A(n + 1);
+    for (auto v : A) {
+      in_A[v] = 1;
+    }
+    vector<vector<int>> projs(n + 1);
+    for (int root = 1; root <= n; root++) {
+      if (alive.count(root) == 0) { continue; }
+      if (in_A[root]) { continue; }
+      vector<int> que{root};
+      vector<int> dis(n + 1, n + 1);
+      dis[root] = 0;
+      for (int ii = 0; ii < (int)que.size(); ii++) {
+        int v = que[ii];
+        for (auto nei : all_neis[v]) {
+          if (dis[nei] < n + 1) { continue; }
+          dis[nei] = dis[v] + 1;
+          if (in_A[nei]) {
+            projs[root].PB(nei);
+          } else if (dis[nei] < r) {
+            que.PB(nei);
+          }
+        }
+      }
+      sort(projs[root].begin(), projs[root].end());
+    }
+    return projs;
   }
     
     

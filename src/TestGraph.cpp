@@ -30,7 +30,7 @@ int main() {
     Graph last_graph;
     pair<int, int> pr;
     for (int passes = 1; passes <= 5; passes++) {
-      for (int i = 1; i <= n; i++) {
+      for (int i = 1; i <= gr.n; i++) {
         if (gr.alive.count(i) == 0) { continue; }
         gr.CheckRemoveWhiteEdgesOne(i);
         gr.CheckWhiteNoBlack(i);
@@ -51,7 +51,8 @@ int main() {
         }
       }
     }
-//     Crash: ;
+    
+//     Crash: ; 
 //     debug(last_graph.SolveBrut(), gr.SolveBrut());
 //     debug(last_graph.alive, gr.alive, pr);
 //     debug(last_graph.domset);
@@ -65,13 +66,23 @@ int main() {
     }
     aft_m /= 2;
     int aft_domset = gr.SolveBrut();
-    debug(or_n, or_m, aft_n, aft_m, or_domset, aft_domset, sz_gr);
+    debug(or_n, or_m, aft_n, aft_m, or_domset, aft_domset, sz_gr, gr.n);
     sum_or_n += or_n;
     sum_sz_n += aft_n;
     sum_or_dom += or_domset;
     sum_sz_gr += sz_gr;
     assert(or_domset == aft_domset);
     assert(sz_gr >= or_domset);
+    vector<int> A;
+    for (int i = 1; i <= gr.n; i++) {
+      if (gr.alive.count(i) == 0) { continue; }
+      if (rand() % 3 == 0) {
+        A.PB(i);
+      }
+    }
+    //debug(A);
+    //debug(gr.Count3Projections(A, ), gr.Count3Projections2(A));
+    assert(gr.CountProjections(A, 3) == gr.CountProjections2(A, 3));
   }
   debug(sum_or_n, sum_sz_n, sum_or_dom, sum_sz_gr);
 }   
