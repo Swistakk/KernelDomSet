@@ -317,4 +317,63 @@ struct Graph {
     }
     return true;
   }
+  
+  // 
+  vector<int> GreedyDomset() { // lazily coded in n^2, this won't be a bottleneck anyway
+    vector<bool> need_domination(n + 1);
+    int cnt_need = 0;
+    for (int i = 1; i <= n; i++) {
+      if (!is_white[i] && alive.count(i)) {
+        need_domination[i] = true;
+        cnt_need++;
+      }
+    }
+    vector<int> res;
+    while (cnt_need) {
+      int best_guy = 0;
+      int best_amount = 0;
+      for (auto v : alive) {
+        int here_amount = 0;
+        if (need_domination[v]) {
+          here_amount++;
+        }
+        for (auto nei : black_neis[v]) {
+          if (need_domination[nei]) {
+            here_amount++;
+          }
+        }
+        if (here_amount > best_amount) {
+          best_amount = here_amount;
+          best_guy = v;
+        }
+      }
+      res.PB(best_guy);
+      cnt_need -= best_amount;
+      need_domination[best_guy] = false;
+      for (auto nei : black_neis[best_guy]) {
+        need_domination[nei] = false;
+      }
+    }
+    
+    // begin checks
+    assert(cnt_need == 0);
+    set<int> domset_set(res.begin(), res.end());
+    for (int i = 1; i <= n; i++) {
+      if (is_white[i] || alive.count(i) == 0) { continue; }
+      if (domset_set.count(i)) { continue; }
+      bool succ = false;
+      for (auto nei : all_neis[i]) {
+        if (domset_set.count(nei)) {
+          succ = true;
+          break;
+        }
+      }
+      assert(succ);
+    }
+    // end checks
+    
+    return res;
+  }
+    
+    
 };

@@ -5,6 +5,7 @@ int main() {
   //srand(clock());
   srand(0);
   int sum_sz_n = 0, sum_or_n = 0;
+  int sum_or_dom = 0, sum_sz_gr = 0;
   for (int test_ind = 1; test_ind <= 1000; test_ind++) {
     int n = 1 + rand() % 20;
     int m = min(n * (n - 1) / 2, 1 + rand() % (3 * n));
@@ -23,6 +24,7 @@ int main() {
     for (auto e : es) {
       gr.AddEdge(e.st, e.nd);
     }
+    int sz_gr = gr.GreedyDomset().size();
     int or_n = n, or_m = m;
     int or_domset = gr.SolveBrut();
     Graph last_graph;
@@ -35,7 +37,7 @@ int main() {
         gr.CheckWhiteSubBlack(i);
         gr.CheckRecolorSuperset(i);
         gr.CheckLeaf(i);
-         gr.AlberOne(i);
+        gr.AlberOne(i);
         for (int j = 1; j < i; j++) {
 //           last_graph = gr;
           if (gr.AlberPair(i, j)) {
@@ -63,10 +65,13 @@ int main() {
     }
     aft_m /= 2;
     int aft_domset = gr.SolveBrut();
-    debug(or_n, or_m, aft_n, aft_m, or_domset, aft_domset);
+    debug(or_n, or_m, aft_n, aft_m, or_domset, aft_domset, sz_gr);
     sum_or_n += or_n;
     sum_sz_n += aft_n;
+    sum_or_dom += or_domset;
+    sum_sz_gr += sz_gr;
     assert(or_domset == aft_domset);
+    assert(sz_gr >= or_domset);
   }
-  debug(sum_or_n, sum_sz_n);
+  debug(sum_or_n, sum_sz_n, sum_or_dom, sum_sz_gr);
 }   
