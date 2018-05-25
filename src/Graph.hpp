@@ -1,5 +1,7 @@
 #pragma once
 #include "Headers.hpp"
+#include "Independent.hpp"
+#include "CommonGraph.hpp"
 
 struct Graph {
   vector<set<int>> all_neis;
@@ -444,6 +446,73 @@ struct Graph {
     }
     return projs;
   }
-    
+  
+  vector<vector<int>> ClassifyBy3Projections(vector<int> A) {
+    vector<vector<int>> projections = CountProjections(A, 3);
+    vector<int> in_A(n + 1);
+    for (auto u : A) {
+      in_A[u] = 1;
+    }
+    map<vector<int>, vector<int>> classes;
+    for (int i = 1; i <= n; i++) {
+      if (alive.count(i) == 0) { continue; }
+      if (in_A[i]) { continue; }
+      classes[projections[i]].PB(i);
+    }
+    vector<vector<int>> res;
+    for (auto p : classes) {
+      res.PB(p.nd);
+    }
+    return res;
+  }
+  
+  pair<vector<int>, vector<int>> UQWLeastDegreePower(vector<int> oldA, int R) {
+    unordered_set<int> S;
+    vector<vector<int>> candsA;
+    vector<int> candsAszs;
+    vector<unordered_set<int>> candsS;
+    vector<vector<int>> candsS_vec;
+    vector<Solution> solutions;
+    vector<vector<int>> graph(n + 1);
+    for (int i = 1; i <= n; i++) {
+      if (alive.count(i) == 0) { continue; }
+      graph[i] = vector<int>(all_neis[i].begin(), all_neis[i].end());
+    }
+    for (int phase = 0; phase < min(10, n); phase++) {
+      vector<int> independent = IndependentRLeastDegreePow(graph, oldA, R, S);
+      candsA.PB(independent);
+      candsAszs.PB(independent.size());
+      candsS.PB(S);
+      candsS_vec.PB(vector<int>(S.begin(), S.end()));
+      solutions.PB(Solution(graph, R, candsS_vec.back(), independent));
+      int to_delete = 0;
+      for (int v = 1; v <= n; v++) {
+        if (S.count(v)) { continue; }
+        if (to_delete == 0 || graph[to_delete].size() < graph[v].size()) {
+          to_delete = v;
+        }
+      }
+      S.insert(to_delete);
+      for (auto& v : oldA) {
+        if (v == to_delete) {
+          swap(v, oldA.back());
+          break;
+        }
+      }
+      if (oldA.back() == to_delete) {
+        oldA.pop_back();
+      }
+    }
+    int who_biggest = 0;
+    for (int ii = 1; ii < (int)candsA.size(); ii++) {
+      if (solutions[who_biggest] < solutions[ii]) {
+        who_biggest = ii;
+      }
+    }
+    oldA = candsA[who_biggest];
+    S = candsS[who_biggest];
+    return {vector<int>(S.begin(), S.end()), oldA};
+  }
+  
     
 };
