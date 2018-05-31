@@ -11,7 +11,7 @@ OBJECTS=$(patsubst %.cpp,%.o,$(SOURCES))
 
 all: $(EXECS)
 
-TestGraph: TestGraph.o ReadTxt.o FilesOps.o FlagParser.o CommonGraph.o UQWReviver.o ComputeWReach.o Independent.o
+TestGraph: TestGraph.o ReadTxt.o FilesOps.o FlagParser.o CommonGraph.o UQWReviver.o ComputeWReach.o Independent.o UQW.o
 	$(CXX) $(LDFLAGS) $^ -o $@
 	
 .%.depends: %.cpp
