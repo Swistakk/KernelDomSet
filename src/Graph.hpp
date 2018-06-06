@@ -614,5 +614,52 @@ struct Graph {
     }
     return {(int)alive.size(), cnt_black};
   }
+  
+  void Reduce(bool sparsity_rule, bool alber_one, bool alber_pair) {
+    //Graph last_graph;
+    pair<int, int> last_info = GetVerticesStats();
+    for (int passes = 1; ; passes++) {
+      //last_graph = gr;
+      if (sparsity_rule) {
+        TryFindingIrrelevantDominatee();
+      }
+//       if (last_graph.SolveBrut() != SolveBrut()) {
+//         last_graph.Debug();
+//         Debug();
+//         debug(last_graph.SolveBrut(), SolveBrut());
+//         assert(false);
+//       }
+      for (int i = 1; i <= n; i++) {
+        if (alive.count(i) == 0) { continue; }
+        CheckRemoveWhiteEdgesOne(i);
+        CheckWhiteNoBlack(i);
+        CheckWhiteSubBlack(i);
+        CheckRecolorSuperset(i);
+        CheckLeaf(i);
+        if (alber_one) {
+          AlberOne(i);
+        }
+        if (alber_pair) {
+          for (int j = 1; j < i; j++) {
+  //           last_graph = gr;
+            if (AlberPair(i, j)) {
+  //             pr = {i, j};
+  //             int aft = SolveBrut();
+  //             if (aft != or_domset) {
+  //               debug(aft, or_domset, or_n, or_m);
+  //               goto Crash;
+  //             }
+            }
+          }
+        }
+      }
+      //completed_passes++;
+      pair<int, int> cur_info = GetVerticesStats();
+      if (cur_info == last_info) {
+        break;
+      }
+      last_info = cur_info;
+    }
+  }
     
 };

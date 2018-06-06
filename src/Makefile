@@ -1,4 +1,4 @@
-EXECS=TestGraph
+EXECS=TestRandomGraphs ReduceGraph
 OPTFLAGS=-O2 -std=c++11
 OPTLOCALFLAGS= -DLOCAL -std=c++11 -O2
 DBGFLAGS= -DLOCAL -lubsan -std=c++11 -fsanitize=address -g -fsanitize=undefined -pedantic -D_GLIBCXX_DEBUG -Wall -Wextra -Wfloat-equal -Wlogical-op -Wshadow -Wunused
@@ -11,8 +11,11 @@ OBJECTS=$(patsubst %.cpp,%.o,$(SOURCES))
 
 all: $(EXECS)
 
-TestGraph: TestGraph.o ReadTxt.o FilesOps.o FlagParser.o CommonGraph.o UQWReviver.o ComputeWReach.o Independent.o UQW.o
+TestRandomGraphs: TestRandomGraphs.o ReadTxt.o FilesOps.o FlagParser.o CommonGraph.o UQWReviver.o ComputeWReach.o Independent.o UQW.o
 	$(CXX) $(LDFLAGS) $^ -o $@
+
+ReduceGraph: ReduceGraph.o ReadTxt.o FilesOps.o FlagParser.o CommonGraph.o UQWReviver.o ComputeWReach.o Independent.o UQW.o
+	$(CXX) $(LDFLAGS) $^ -o $@	
 	
 .%.depends: %.cpp
 	$(CXX) $(CXXFLAGS) -MM $< -o $@

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Graph.hpp"
 using namespace std;
+
 int main() {
   //srand(clock());
   srand(0);
@@ -29,45 +30,7 @@ int main() {
     int sz_gr = gr.GreedyDomsetBlack().size();
     int or_n = n, or_m = m;
     int or_domset = gr.SolveBrut();
-    Graph last_graph;
-    pair<int, int> pr;
-    pair<int, int> last_info = gr.GetVerticesStats();
-    for (int passes = 1; ; passes++) {
-      //last_graph = gr;
-      gr.TryFindingIrrelevantDominatee();
-//       if (last_graph.SolveBrut() != gr.SolveBrut()) {
-//         last_graph.Debug();
-//         gr.Debug();
-//         debug(last_graph.SolveBrut(), gr.SolveBrut());
-//         assert(false);
-//       }
-      for (int i = 1; i <= gr.n; i++) {
-        if (gr.alive.count(i) == 0) { continue; }
-        gr.CheckRemoveWhiteEdgesOne(i);
-        gr.CheckWhiteNoBlack(i);
-        gr.CheckWhiteSubBlack(i);
-        gr.CheckRecolorSuperset(i);
-        gr.CheckLeaf(i);
-        gr.AlberOne(i);
-        for (int j = 1; j < i; j++) {
-//           last_graph = gr;
-          if (gr.AlberPair(i, j)) {
-//             pr = {i, j};
-//             int aft = gr.SolveBrut();
-//             if (aft != or_domset) {
-//               debug(aft, or_domset, or_n, or_m);
-//               goto Crash;
-//             }
-          }
-        }
-      }
-      completed_passes++;
-      pair<int, int> cur_info = gr.GetVerticesStats();
-      if (cur_info == last_info) {
-        break;
-      }
-      last_info = cur_info;
-    }
+    gr.Reduce(true, true, true);
     
 //     Crash: ; 
 //     debug(last_graph.SolveBrut(), gr.SolveBrut());
@@ -93,7 +56,7 @@ int main() {
     sum_sz_gr += sz_gr;
     assert(or_domset == aft_domset);
     assert(sz_gr >= or_domset);
-    vector<int> A;
+    //vector<int> A;
 //     for (int i = 1; i <= gr.n; i++) {
 //       if (gr.alive.count(i) == 0) { continue; }
 //       if (rand() % 3 == 0) {
@@ -102,7 +65,7 @@ int main() {
 //     }
     //debug(A);
     //debug(gr.Count3Projections(A, ), gr.Count3Projections2(A));
-    assert(gr.CountProjections(A, 3) == gr.CountProjections2(A, 3));
+    //assert(gr.CountProjections(A, 3) == gr.CountProjections2(A, 3));
   }
   debug(sum_or_n, sum_sz_n, sum_black, sum_or_dom, sum_sz_gr, completed_passes);
 }   
