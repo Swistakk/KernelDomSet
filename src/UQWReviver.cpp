@@ -9,7 +9,7 @@ vector<int> ReviveRedundantForb(vector<vector<int>>& graph, int R, vector<int> f
   for (auto v : scat) {
     scat_mask[v] = 1;
   }
-  random_shuffle(forb.begin(), forb.end());
+  //random_shuffle(forb.begin(), forb.end());
 
   vector<int> dis(n + 1);
   vector<int> last_vis(n + 1);

@@ -329,16 +329,26 @@ struct Graph {
     return true;
   }
   
-  // 
-  vector<int> GreedyDomset() { // lazily coded in n^2, this won't be a bottleneck anyway
-    vector<bool> need_domination(n + 1);
-    int cnt_need = 0;
+  vector<int> GreedyDomsetBlack() {
+    vector<int> black_vertices;
     for (int i = 1; i <= n; i++) {
       if (!is_white[i] && alive.count(i)) {
-        need_domination[i] = true;
-        cnt_need++;
+        black_vertices.PB(i);
       }
     }
+    return GreedyDomsetOfArbitrarySubset(black_vertices);
+  }
+  
+  // lazily coded in n^2, this won't be a bottleneck anyway
+  // assumes that all vertices in to_dominate are black
+  vector<int> GreedyDomsetOfArbitrarySubset(vector<int> to_dominate) { 
+    vector<bool> need_domination(n + 1);
+    int cnt_need = (int)to_dominate.size();
+    for (auto v : to_dominate) {
+      assert(!is_white[v]);
+      need_domination[v] = true;
+    }
+    vector<bool> need_domination_copy = need_domination;
     vector<int> res;
     while (cnt_need) {
       int best_guy = 0;
@@ -370,7 +380,7 @@ struct Graph {
     assert(cnt_need == 0);
     set<int> domset_set(res.begin(), res.end());
     for (int i = 1; i <= n; i++) {
-      if (is_white[i] || alive.count(i) == 0) { continue; }
+      if (!need_domination_copy[i] || alive.count(i) == 0) { continue; }
       if (domset_set.count(i)) { continue; }
       bool succ = false;
       for (auto nei : all_neis[i]) {
@@ -387,6 +397,7 @@ struct Graph {
   }
   
   vector<vector<int>> CountProjections(vector<int> A, int r) {
+    sort(A.begin(), A.end());
     vector<int> in_A(n + 1);
     for (auto v : A) {
       in_A[v] = 1;
@@ -419,7 +430,7 @@ struct Graph {
   }
   
   // coded for independent verification of correctness
-  vector<vector<int>> CountProjections2(vector<int> A, int r) { 
+  vector<vector<int>> CountProjections2(vector<int> A, int r) {
     vector<int> in_A(n + 1);
     for (auto v : A) {
       in_A[v] = 1;
@@ -448,8 +459,8 @@ struct Graph {
     return projs;
   }
   
-  void TryFindingIrrelevantDominatee(vector<int> D) { // D is domset apx
-    vector<int> S, scat;
+  void TryFindingIrrelevantDominatee() { // D is domset apx of current core
+    vector<int> D = GreedyDomsetBlack();
     vector<int> in_D(n + 1);
     for (auto x : D) {
       in_D[x] = 1;
@@ -467,26 +478,98 @@ struct Graph {
           A.PB(v);
         }
       }
+      vector<int> S, scat;
       tie(S, scat) = UQWLeastDegreePower(G_minus_D, A, 2);
       // wrzuc S do D
+      vector<int> in_D_copy = in_D;
       vector<int> Dprim(D);
       for (auto v : S) {
         Dprim.PB(v);
+        in_D[v] = 1;
       }
       vector<vector<int>> projs = CountProjections(Dprim, 2);
-      map<vector<int>, vector<int>> classes;
-      for (int v = 1; v <= n; v++) {
-        if (alive.count(v) == 0) { continue; }
-        vector<int> filtered_proj_here;
+      //debug(Dprim, projs[1]);
+      map<pair<vector<int>, vector<int>>, vector<int>> classes;
+      //for (int v = 1; v <= n; v++) {
+      //  if (in_D[v] || alive.count(v) == 0 || is_white[v]) { continue; }
+      for (auto v : scat) {
+        vector<int> neis_in_Dprim;
+        vector<int> black_proj2;
         for (auto at_proj : projs[v]) {
-          if (all_neis[v].count(at_proj) || !is_white[at_proj]) {
-            filtered_proj_here.PB(at_proj);
+          if (all_neis[v].count(at_proj)) {
+            neis_in_Dprim.PB(at_proj);
+          } else if (!is_white[at_proj]) {
+            black_proj2.PB(at_proj);
           } 
         }
-        classes[filtered_proj_here].PB(v);
+        classes[{neis_in_Dprim, black_proj2}].PB(v);
       }
       
       // do greedy on something and find irr dominatee
+      
+      int bfs_count = 0;
+      vector<int> dis(n + 1);
+      vector<int> last_vis(n + 1);
+      for (auto elt : classes) {
+        vector<int> neis_in_Dprim, black_proj2;
+        tie(neis_in_Dprim, black_proj2) = elt.st;
+        vector<int> lambda = elt.nd; // hopefully it is big
+        
+        bfs_count++;
+        vector<int> que = lambda;
+        for (auto v : lambda) {
+          last_vis[v] = bfs_count;
+          dis[v] = 0;
+        }
+        vector<int> to_dominate;
+        for (int ii = 0; ii < (int)que.size(); ii++) {
+          int v = que[ii];
+          if (!is_white[v]) {
+            to_dominate.PB(v);
+          }
+          if (dis[v] == 2) { continue; }
+          if (in_D[v]) { continue; }
+          for (auto nei : all_neis[v]) {
+            if (last_vis[nei] == bfs_count) { continue; }
+            last_vis[nei] = bfs_count;
+            dis[nei] = 1 + dis[v];
+            que.PB(nei);
+          } 
+        }
+        
+        
+        // zrob drugiego checka tutaj
+        set<int> zioms;
+        for (auto v : lambda) {
+          zioms.insert(v);
+          for (auto nei : all_neis[v]) {
+            if (!is_white[nei]) {
+              zioms.insert(nei);
+            }
+            if (in_D[nei]) { continue; }
+            for (auto neinei : all_neis[nei]) {
+              if (!is_white[neinei]) {
+                zioms.insert(neinei);
+              }
+            }
+          }
+        }
+        
+        
+        sort(to_dominate.begin(), to_dominate.end());
+        vector<int> chk(zioms.begin(), zioms.end());
+        //debug(to_dominate, chk, lambda, all_neis[lambda[0]]);
+        assert(to_dominate == chk);
+        vector<int> greedy = GreedyDomsetOfArbitrarySubset(to_dominate);
+        if ((int)greedy.size() + 2 <= (int)lambda.size()) {
+          int to_whiten_count = (int)lambda.size() - (int)greedy.size() - 1; 
+          debug("SUCC", to_whiten_count);
+          debug(D, Dprim, lambda, neis_in_Dprim, black_proj2);
+          for (int ii = 0; ii < to_whiten_count; ii++) {
+            ColorWhite(lambda[ii]);
+          }
+        }
+      }
       
       int who_biggest_deg_D = -1;
       int biggest_deg_D = -1;
@@ -494,7 +577,7 @@ struct Graph {
         if (in_D[v] || alive.count(v) == 0) { continue; }
         int my_deg_D = 0;
         for (auto nei : all_neis[v]) {
-          if (in_D[v]) {
+          if (in_D[nei]) {
             my_deg_D++;
           }
         }
@@ -506,26 +589,30 @@ struct Graph {
       if (biggest_deg_D <= 5) {
         break;
       }
+      in_D = in_D_copy;
       D.PB(who_biggest_deg_D);
       in_D[who_biggest_deg_D] = 1;
     }
       
   }
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  void Debug() {
+    debug(n);
+    debug(alive);
+    for (int v = 1; v <= n; v++) {
+      if (alive.count(v) == 0) { continue; }
+      debug(v, is_white[v], black_neis[v], white_neis[v]);
+    }
+  }
   
+  pair<int, int> GetVerticesStats() {
+    int cnt_black = 0;
+    for (auto x : alive) {
+      if (!is_white[x]) {
+        cnt_black++;
+      }
+    }
+    return {(int)alive.size(), cnt_black};
+  }
     
 };

@@ -6,6 +6,8 @@ int main() {
   srand(0);
   int sum_sz_n = 0, sum_or_n = 0;
   int sum_or_dom = 0, sum_sz_gr = 0;
+  int sum_black = 0;
+  int completed_passes = 0;
   for (int test_ind = 1; test_ind <= 1000; test_ind++) {
     int n = 1 + rand() % 20;
     int m = min(n * (n - 1) / 2, 1 + rand() % (3 * n));
@@ -24,12 +26,21 @@ int main() {
     for (auto e : es) {
       gr.AddEdge(e.st, e.nd);
     }
-    int sz_gr = gr.GreedyDomset().size();
+    int sz_gr = gr.GreedyDomsetBlack().size();
     int or_n = n, or_m = m;
     int or_domset = gr.SolveBrut();
     Graph last_graph;
     pair<int, int> pr;
-    for (int passes = 1; passes <= 5; passes++) {
+    pair<int, int> last_info = gr.GetVerticesStats();
+    for (int passes = 1; ; passes++) {
+      //last_graph = gr;
+      gr.TryFindingIrrelevantDominatee();
+//       if (last_graph.SolveBrut() != gr.SolveBrut()) {
+//         last_graph.Debug();
+//         gr.Debug();
+//         debug(last_graph.SolveBrut(), gr.SolveBrut());
+//         assert(false);
+//       }
       for (int i = 1; i <= gr.n; i++) {
         if (gr.alive.count(i) == 0) { continue; }
         gr.CheckRemoveWhiteEdgesOne(i);
@@ -50,6 +61,12 @@ int main() {
           }
         }
       }
+      completed_passes++;
+      pair<int, int> cur_info = gr.GetVerticesStats();
+      if (cur_info == last_info) {
+        break;
+      }
+      last_info = cur_info;
     }
     
 //     Crash: ; 
@@ -63,6 +80,9 @@ int main() {
     int aft_n = gr.alive.size(), aft_m = 0;
     for (auto v : gr.alive) {
       aft_m += gr.all_neis[v].size();
+      if (!gr.is_white[v]) {
+        sum_black++;
+      }
     }
     aft_m /= 2;
     int aft_domset = gr.SolveBrut();
@@ -74,15 +94,15 @@ int main() {
     assert(or_domset == aft_domset);
     assert(sz_gr >= or_domset);
     vector<int> A;
-    for (int i = 1; i <= gr.n; i++) {
-      if (gr.alive.count(i) == 0) { continue; }
-      if (rand() % 3 == 0) {
-        A.PB(i);
-      }
-    }
+//     for (int i = 1; i <= gr.n; i++) {
+//       if (gr.alive.count(i) == 0) { continue; }
+//       if (rand() % 3 == 0) {
+//         A.PB(i);
+//       }
+//     }
     //debug(A);
     //debug(gr.Count3Projections(A, ), gr.Count3Projections2(A));
     assert(gr.CountProjections(A, 3) == gr.CountProjections2(A, 3));
   }
-  debug(sum_or_n, sum_sz_n, sum_or_dom, sum_sz_gr);
+  debug(sum_or_n, sum_sz_n, sum_black, sum_or_dom, sum_sz_gr, completed_passes);
 }   
