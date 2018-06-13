@@ -4,14 +4,14 @@
 using namespace std;
 
 void Err() {
-  cerr<<"Usage: --in_g=graph.txtg --sparsity=on/off --alber=none/one/pair/both"<<endl;
+  cerr<<"Usage: --in=graph.txtg --sparsity=on/off --alber=none/one/pair/both"<<endl;
   cerr<<"--h for help\n";
   exit(1);
 }
 
 int main(int argc, char** argv) {
   if (argc == 2 && string(argv[1]) == "--h") {
-    cerr<<"Usage: --in_g=graph.txtg --sparsity=on/off --alber=none/one/pair/both"<<endl;
+    cerr<<"Usage: --in=graph.txtg --sparsity=on/off --alber=none/one/pair/both"<<endl;
     return 0;
   }
   bool sparsity_mode = false;
@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
   try {
     FlagParser flag_parser;
     flag_parser.ParseFlags(argc, argv);
-    graph_file = flag_parser.GetFlag("in_g", true);
+    graph_file = flag_parser.GetFlag("in", true);
     string sparsity = flag_parser.GetFlag("sparsity", true);
     string alber = flag_parser.GetFlag("alber", true);
     if (sparsity == "on") {
@@ -65,8 +65,10 @@ int main(int argc, char** argv) {
     aft_m += (int)graph.all_neis[v].size();
   }
   aft_m /= 2;
-  debug(n, m, aft_n, aft_m);
-  
+  cout<<n<<" "<<m<<" "<<aft_n<<" "<<aft_m<<endl;
+  //debug(n, m, aft_n, aft_m);
+  //graph.Debug();
+  //debug(graph.domset);
   // print something to output file
   
 }

@@ -68,7 +68,8 @@ struct Graph {
       black_neis[a].erase(b);
       swap(a, b);
     }
-  } 
+  }
+  // removes all edges to white neighbours
   void CheckRemoveWhiteEdgesOne(int v) { // 2 (a)
     if (alive.count(v) == 0) { return; }
     if (!is_white[v]) { return; }
@@ -77,8 +78,10 @@ struct Graph {
       RemoveEdge(v, nei);
     }
   }
+  // kills white guy if he can't dominate any black guy
   void CheckWhiteNoBlack(int v) { // 2 (b)
     if (alive.count(v) == 0) { return; }
+    //debug("WhiteNoBlack", v);
     if (is_white[v] && black_neis[v].empty()) {
       Kill(v);
     }
@@ -91,15 +94,19 @@ struct Graph {
     }
     return true;
   }
+  // if I'm white u then check if there is v
+  // such that N(u) n black \subset N(v)
+  // if yes, then pls kill me
   void CheckWhiteSubBlack(int v) { // 2 (c) (superset of 2b)
     // easy to code it probably faster by intersecting neighbourhoods of black_neis[v]
     if (alive.count(v) == 0) { return; }
     if (!is_white[v]) { return; }
+    //debug("WhiteSubBlack", v);
     set<int> checked;
     for (auto nei : all_neis[v]) {
       checked.insert(nei);
       if (AreBlackContained(v, nei)) {
-        //debug("here1", nei);
+        //debug("black contained", nei);
         Kill(v);
         return;
       }
@@ -109,7 +116,7 @@ struct Graph {
         if (checked.count(neinei) || neinei == v) { continue; }
         checked.insert(neinei);
         if (AreBlackContained(v, neinei)) {
-          //debug("here2", neinei);
+          //debug("black contained", neinei);
           Kill(v);
           return;
         }
@@ -120,6 +127,7 @@ struct Graph {
   void CheckRecolorSuperset(int u) {
     if (alive.count(u) == 0) { return; }
     if (is_white[u]) { return; }
+    //debug("RecolorSuperset", u);
     for (auto nei : black_neis[u]) {
       bool fail = false;
       for (auto neinei : all_neis[nei]) {
@@ -222,6 +230,7 @@ struct Graph {
     }
     for (auto nei : N3) {
       if (!is_white[nei]) {
+        //debug("alber one");
         PutDomset(v);
         return;
       }
@@ -378,9 +387,17 @@ struct Graph {
     
     // begin checks
     assert(cnt_need == 0);
+    assert(ValidateDomset(need_domination_copy, res));
+    
+    // end checks
+    
+    return res;
+  }
+  
+  bool ValidateDomset(vector<bool> need_domination, vector<int> res) {
     set<int> domset_set(res.begin(), res.end());
     for (int i = 1; i <= n; i++) {
-      if (!need_domination_copy[i] || alive.count(i) == 0) { continue; }
+      if (!need_domination[i] || alive.count(i) == 0) { continue; }
       if (domset_set.count(i)) { continue; }
       bool succ = false;
       for (auto nei : all_neis[i]) {
@@ -389,11 +406,12 @@ struct Graph {
           break;
         }
       }
+      if (!succ) {
+        return false;
+      }
       assert(succ);
     }
-    // end checks
-    
-    return res;
+    return true;
   }
   
   vector<vector<int>> CountProjections(vector<int> A, int r) {
@@ -563,8 +581,8 @@ struct Graph {
         vector<int> greedy = GreedyDomsetOfArbitrarySubset(to_dominate);
         if ((int)greedy.size() + 2 <= (int)lambda.size()) {
           int to_whiten_count = (int)lambda.size() - (int)greedy.size() - 1; 
-          debug("SUCC", to_whiten_count);
-          debug(D, Dprim, lambda, neis_in_Dprim, black_proj2);
+          //debug("SUCC", to_whiten_count);
+          //debug(D, Dprim, lambda, neis_in_Dprim, black_proj2);
           for (int ii = 0; ii < to_whiten_count; ii++) {
             ColorWhite(lambda[ii]);
           }
@@ -586,7 +604,7 @@ struct Graph {
           who_biggest_deg_D = v;
         }
       }
-      if (biggest_deg_D <= 5) {
+      if (biggest_deg_D <= 7) {
         break;
       }
       in_D = in_D_copy;
@@ -629,7 +647,10 @@ struct Graph {
 //         debug(last_graph.SolveBrut(), SolveBrut());
 //         assert(false);
 //       }
-      for (int i = 1; i <= n; i++) {
+      
+      vector<int> alive_vec(alive.begin(), alive.end());
+      //for (int i = 1; i <= n; i++) {
+      for (auto i : alive_vec) {
         if (alive.count(i) == 0) { continue; }
         CheckRemoveWhiteEdgesOne(i);
         CheckWhiteNoBlack(i);
@@ -640,7 +661,9 @@ struct Graph {
           AlberOne(i);
         }
         if (alber_pair) {
-          for (int j = 1; j < i; j++) {
+          for (auto j : alive_vec) {
+            if (i == j) { break; }
+          //for (int j = 1; j < i; j++) {
   //           last_graph = gr;
             if (AlberPair(i, j)) {
   //             pr = {i, j};
